@@ -3,7 +3,7 @@
 Source for **CAMEL CABAL TERMINAL** (`/camel/`) and the **/cabal/** members area — a token-gated social space for $CAMEL holders.
 
 ```
-camel/      DN404 mint tracker, Defined.fi chart, donor wall, Uniswap deeplink
+camel/      DN404 mint tracker, Defined.fi chart, donor wall, Cypher AMM V4 deeplink
 cabal/      gated social: feed, group chat, drawing board, arcade, profiles
 backend/    single Python 3.12 Lambda + IAM policy
 ```
@@ -18,7 +18,11 @@ See [`SECURITY.md`](./SECURITY.md) for the threat model and gating logic, and [`
 |---|---|
 | Token (DN404) | `0x000Caba1002917B27300d7b67Be2d1C51B93bF00` |
 | ERC-721 mirror | `0x9f2F3E04c67AD0854A6b225d5FDdBaE513dF0fCC` |
-| Pool (Uniswap V4) | `0x1b337491fb312c3500e1feef56d50bcacee6c7e3` |
+| Pool (Uniswap V4 — used by Defined.fi chart) | `0x1b337491fb312c3500e1feef56d50bcacee6c7e3` |
+| Trade venue | **Cypher AMM V4** (`app.cyphereth.com/swap`) — Algebra Integral v1.2 |
+| Cypher Router V4 | `0x20C5893f69F635f55b0367C519F3f95e59c0b0Ab` |
+| Cypher Quoter V4 | `0x02f22D58d161d1C291ABfe88764d84120f20F723` |
+| Cypher Factory V4 | `0xfb8Ed3485EfA29a0e4bed93351dD51B59fC4b0f0` |
 | Donation wallet | `0xf62290b1e405f03628a4b6ba025ad5b655cce8a2` |
 | Gate threshold | 1 NFT == 1,000,000 $CAMEL (DN404) |
 

@@ -158,9 +158,9 @@ async function sendDonation() {
     } finally { btn.disabled = false; btn.textContent = orig; }
 }
 
-function openUniswap() {
+function openCypher() {
     const ethAmt = parseFloat(document.getElementById('donate-amount').value || '0');
-    let url = `https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=${CAMEL_TOKEN}&chain=mainnet`;
+    let url = `https://app.cyphereth.com/swap?inputCurrency=ETH&outputCurrency=${CAMEL_TOKEN}`;
     if (ethAmt > 0) url += `&exactAmount=${ethAmt}&exactField=input`;
     window.open(url, '_blank', 'noopener');
 }
@@ -202,7 +202,7 @@ async function loadDonorWall() {
 function initSwap() {
     document.getElementById('donate-connect').addEventListener('click', connectWallet);
     document.getElementById('donate-send').addEventListener('click', sendDonation);
-    document.getElementById('donate-uniswap').addEventListener('click', openUniswap);
+    document.getElementById('donate-cypher').addEventListener('click', openCypher);
     loadDonorWall();
     setInterval(loadDonorWall, 60000);
     if (window.ethereum && window.ethereum.selectedAddress) connectWallet();
