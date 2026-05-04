@@ -10,7 +10,7 @@ Looked at [`monygroupcorp/micro-web3`](https://github.com/monygroupcorp/micro-we
 | Read-only ownership / balance checks | Server does `eth_call balanceOf` over Chainstack at sign-in; client does `ownerOf` indirectly via Alchemy. | `BlockchainService` + `ContractCache` give TTL-cached reads against any RPC. **Removes the Alchemy dependency** for the PFP picker — we can hit a public RPC client-side and cache. Server still does its independent `ownerOf` for write authorization (security boundary stays). |
 | Multi-RPC failover | None — one Chainstack endpoint. | `BlockchainService` rotates RPCs and falls back. |
 | IPFS image rendering | Hard-coded `https://ipfs.io/ipfs/<cid>/<id>.webp` for the Camel collection. | `IpfsService` + `IpfsImage` add gateway rotation (Cloudflare, Pinata, nftstorage, etc.) — useful when ipfs.io is rate-limited. |
-| Swap UI | We deep-link to Uniswap. | `SwapInterface` is V4-aware. **Could replace the deep-link** with on-site swap once we want to take a fee skim. |
+| Swap UI | We deep-link to Uniswap. | `SwapInterface` is V4-aware. **Could replace the deep-link** with an on-site swap UI for nicer UX. |
 
 ## What I would NOT migrate
 
@@ -46,9 +46,9 @@ After: tries Cloudflare → ipfs.io → nftstorage → pinata. Reduces broken im
 ### 4. Optional: swap on-site → `SwapInterface` (large)
 
 Today: button opens app.uniswap.org with token pre-filled.
-After: on-site swap with a cabal fee skim (e.g. 0.5% to dev wallet).
+After: on-site swap UI so people don't bounce out to Uniswap. We don't take a fee — the cabal funds itself via the **Donate / Contribute** flow (separate page), which records public on-chain donations + notes from holders.
 
-Real engineering — V4 routing is non-trivial. Defer unless you want the fee.
+Real engineering — V4 routing is non-trivial. Defer unless the deep-link UX is hurting conversion.
 
 ## What integration would actually look like
 
