@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>/cabal/ · camels only</title>
+    <meta name="description" content="A private social space for $CAMEL holders. Hold ≥ 1 CAMEL NFT, sign once, post freely. Powered by ebk.tech.">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="ebk.tech">
+    <meta property="og:url" content="https://<your-domain>/cabal/">
+    <meta property="og:title" content="/cabal/ · camels only">
+    <meta property="og:description" content="Private feed, group chat, and a community drawing board for $CAMEL NFT holders. No algorithm. No normies. No fed posting.">
+    <meta property="og:image" content="https://<your-domain>/cabal/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="theme-color" content="#0a1a0a">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://<your-domain>/cabal/">
+    <meta name="twitter:title" content="/cabal/ · camels only">
+    <meta name="twitter:description" content="Private feed, group chat, and a community drawing board for $CAMEL NFT holders. No algorithm. No normies. No fed posting.">
+    <meta name="twitter:image" content="https://<your-domain>/cabal/og.png">
+    <link rel="icon" href="/camel/silk-road.svg" type="image/svg+xml">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/camel/index.css">
+    <link rel="stylesheet" href="cabal.css">
+</head>
+<body class="cabal-standalone">
+    <div class="crt-overlay"></div>
+    <div class="top-nav">
+        <div class="nav-links">
+            <a href="/camel/">← terminal</a> |
+            <a href="https://camelcabal.fun/" target="_blank" rel="noopener">camelcabal.fun</a> |
+            <a href="https://x.com/camel_cabal" target="_blank" rel="noopener">x</a>
+        </div>
+        <div class="cabal-standalone-status">/cabal/ — <span id="nav-camel-count">…</span> camels</div>
+    </div>
+
+    <div class="cabal-standalone-frame">
+        <header class="cabal-standalone-hero">
+            <img src="/camel/silk-road.svg" class="cabal-standalone-logo" alt="silk road">
+            <div>
+                <div class="cabal-standalone-h1">/cabal/</div>
+                <div class="cabal-standalone-h2">camels only · no algorithm · no normies · no fed posting</div>
+                <div class="cabal-standalone-h3">hold ≥ 1 CAMEL NFT · sign once · enter the tent</div>
+            </div>
+        </header>
+
+        <div id="view-cabal" class="content-box cabal-standalone-box">
+            <div id="cabal-gate" class="cabal-gate">
+                <div class="lore">
+                    <p>// route established. silk road relay node 0x000Caba</p>
+                    <p>// hold ≥ 1 CAMEL NFT (1,000,000 $CAMEL = 1 NFT). sign once. enter the tent.</p>
+                    <p>// no DMs from outsiders. no algorithm. no ads. just camels.</p>
+                </div>
+                <button id="cabal-connect" class="swap-btn primary">Connect Wallet</button>
+                <div id="cabal-gate-status" class="swap-status">Awaiting connection.</div>
+            </div>
+
+            <div id="cabal-app" class="cabal-app" style="display:none;">
+                <div class="cabal-header">
+                    <div class="cabal-me">
+                        <span class="cabal-id" id="cabal-me-id">—</span>
+                        <span class="cabal-me-addr" id="cabal-me-addr"></span>
+                        <input id="cabal-handle" placeholder="set a handle…" maxlength="24">
+                        <button id="cabal-handle-save" class="cabal-mini-btn">save</button>
+                        <button id="pfp-change" class="cabal-mini-btn">change pfp</button>
+                        <button id="connect-x" class="cabal-mini-btn">connect X</button>
+                        <span id="cabal-x-badge" class="cabal-x-mini" style="display:none;"></span>
+                        <span id="cabal-handle-flash" class="cabal-flash"></span>
+                    </div>
+                    <div class="cabal-sub-tabs">
+                        <a href="#feed"   data-sub="feed"   class="cabal-sub active">feed</a>
+                        <a href="#group"  data-sub="group"  class="cabal-sub">group chat</a>
+                        <a href="#board"  data-sub="board"  class="cabal-sub">drawing board</a>
+                        <a href="#arcade" data-sub="arcade" class="cabal-sub">arcade</a>
+                        <a href="#camels" data-sub="camels" class="cabal-sub">camels</a>
+                        <a href="javascript:void(0)" id="cabal-logout" class="cabal-sub cabal-logout-link">log out</a>
+                    </div>
+                </div>
+
+                <div id="cabal-sub-feed" class="cabal-pane">
+                    <div class="cabal-composer">
+                        <textarea id="feed-text" rows="2" maxlength="2000" placeholder="post to the cabal feed… paste links, drop images, embed yt"></textarea>
+                        <div class="cabal-composer-actions">
+                            <label class="cabal-mini-btn upload-btn" for="feed-image">[ attach file ]</label>
+                            <input id="feed-image" type="file" accept="image/*,video/*,audio/*" hidden>
+                            <button id="feed-post" class="cabal-mini-btn primary">post</button>
+                        </div>
+                    </div>
+                    <span id="feed-flash" class="cabal-flash"></span>
+                    <div id="feed-list" class="cabal-list"></div>
+                </div>
+
+                <div id="cabal-sub-group" class="cabal-pane" style="display:none;">
+                    <div id="group-list" class="cabal-list cabal-chat"></div>
+                    <div class="cabal-composer">
+                        <input id="group-text" maxlength="2000" placeholder="say something… paste links, embed yt">
+                        <label class="cabal-mini-btn upload-btn" for="group-image">[+]</label>
+                        <input id="group-image" type="file" accept="image/*,video/*,audio/*" hidden>
+                        <button id="group-send" class="cabal-mini-btn primary">send</button>
+                    </div>
+                    <span id="group-flash" class="cabal-flash"></span>
+                </div>
+
+                <div id="cabal-sub-board" class="cabal-pane" style="display:none;">
+                    <div class="board-header">
+                        <span class="board-title">// the bathroom stall · 100×100 · 1 pixel / 3s · permanent</span>
+                        <span id="board-cooldown" class="cabal-flash">ready · place a pixel</span>
+                    </div>
+                    <div class="board-stage">
+                        <canvas id="camel-canvas" width="100" height="100"></canvas>
+                    </div>
+                    <div id="canvas-palette" class="board-palette"></div>
+                    <div class="board-help">click a swatch to pick a color · click the canvas to place. no undo. the desert remembers.</div>
+                    <span id="board-flash" class="cabal-flash"></span>
+                </div>
+
+                <div id="cabal-sub-arcade" class="cabal-pane" style="display:none;">
+                    <div class="arcade-header">// the arcade · all scores public · top of the leaderboard wins forever</div>
+                    <div id="arcade-global-lb" class="arcade-lb arcade-lb-global"></div>
+                    <div id="arcade-tiles" class="arcade-tiles"></div>
+                    <div id="arcade-canvas-wrap" class="arcade-stage" style="display:none;">
+                        <div class="arcade-stage-header">
+                            <span><span id="arcade-name">—</span></span>
+                            <span class="arcade-stage-actions">
+                                <button id="arcade-restart" class="cabal-mini-btn">restart</button>
+                                <button id="arcade-quit" class="cabal-mini-btn">quit</button>
+                            </span>
+                        </div>
+                        <canvas id="arcade-canvas" width="320" height="320"></canvas>
+                        <div id="arcade-pad" class="arcade-pad">
+                            <div class="arcade-pad-row"><button data-pad="up">▲</button></div>
+                            <div class="arcade-pad-row">
+                                <button data-pad="left">◀</button>
+                                <button data-pad="fire">●</button>
+                                <button data-pad="right">▶</button>
+                            </div>
+                            <div class="arcade-pad-row"><button data-pad="down">▼</button></div>
+                        </div>
+                    </div>
+                    <div id="arcade-board" class="arcade-board" style="display:none;">
+                        <div id="arcade-leaderboard" class="arcade-lb"></div>
+                    </div>
+                </div>
+
+                <div id="cabal-sub-camels" class="cabal-pane" style="display:none;">
+                    <div id="camels-list" class="cabal-list"></div>
+                </div>
+
+                <div id="cabal-sub-profile" class="cabal-pane" style="display:none;"></div>
+            </div>
+            <div class="lore-footer">// powered by ebk.tech · cabal node v0.1 · the desert remembers</div>
+        </div>
+    </div>
+
+    <script src="/camel/cabal.js?v=27"></script>
+    <script src="/camel/arcade.js?v=7"></script>
+</body>
+</html>

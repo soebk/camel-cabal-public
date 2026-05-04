@@ -1,0 +1,78 @@
+/* /cabal/ standalone shell + drawing board styles. Loaded after /camel/index.css. */
+body.cabal-standalone {
+    background: #050a05;
+    color: #c5e8c5;
+    font-family: "JetBrains Mono","Courier New",monospace;
+    min-height: 100vh;
+}
+.cabal-standalone .top-nav { background: #0a1a0a; border-bottom: 1px solid #1f6f1f; padding: 8px 16px; }
+.cabal-standalone .nav-links a { color: #9bd09b; }
+.cabal-standalone .nav-links a:hover { color: #4cd44c; }
+.cabal-standalone-status { color: #4cd44c; font-size: 11px; letter-spacing: 0.15em; }
+.cabal-standalone-frame { max-width: 1080px; margin: 0 auto; padding: 24px 18px 60px; }
+.cabal-standalone-hero {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 16px;
+    align-items: center;
+    padding: 16px 20px;
+    border: 1px solid #2c8a2c;
+    background: #0e150e;
+    margin-bottom: 14px;
+}
+.cabal-standalone-logo { width: 80px; height: 80px; background: #050a05; padding: 4px; border: 1px solid #1f6f1f; }
+.cabal-standalone-h1 { font-size: 30px; color: #4cd44c; letter-spacing: 0.04em; }
+.cabal-standalone-h2 { font-size: 12px; color: #c5e8c5; margin-top: 4px; }
+.cabal-standalone-h3 { font-size: 11px; color: #6fa86f; margin-top: 4px; }
+.cabal-standalone-box { background: #0a0e0a; border: 1px solid #1f6f1f; }
+
+/* Header layout when standalone */
+.cabal-standalone .cabal-app { background: transparent; border: none; }
+.cabal-standalone .cabal-header { flex-direction: column; align-items: stretch; }
+.cabal-me { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cabal-me-addr { font-size: 10px; color: #6fa86f; font-family: monospace; }
+.cabal-logout-link { margin-left: auto; color: #d44c4c !important; }
+.cabal-logout-link:hover { color: #ff7777 !important; border-bottom-color: #d44c4c; }
+
+/* Author identity rendering */
+.author-handle { color: #4cd44c; font-weight: bold; }
+.author-id { color: #6fa86f; font-size: 11px; letter-spacing: 0.05em; }
+
+.cabal-flash { font-size: 10px; padding: 0 6px; letter-spacing: 0.05em; min-height: 14px; display: inline-block; }
+.cabal-flash.ok  { color: #4cd44c; }
+.cabal-flash.err { color: #d44c4c; }
+
+/* ── Drawing board ───────────────────────────────────────────── */
+.board-header { display: flex; justify-content: space-between; align-items: center; padding: 0 0 10px; flex-wrap: wrap; gap: 8px; }
+.board-title { font-size: 11px; color: #6fa86f; letter-spacing: 0.1em; }
+.board-stage {
+    display: flex; justify-content: center; padding: 12px;
+    background:
+        repeating-linear-gradient(0deg,  rgba(76,212,76,0.06) 0 1px, transparent 1px 24px),
+        repeating-linear-gradient(90deg, rgba(76,212,76,0.06) 0 1px, transparent 1px 24px),
+        #050a05;
+    border: 1px dashed #1f6f1f;
+}
+#camel-canvas {
+    width: min(560px, 90vw);
+    height: min(560px, 90vw);
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    cursor: crosshair;
+    background: #050a05;
+    border: 1px solid #4cd44c;
+    box-shadow: 0 0 14px rgba(76,212,76,0.3);
+}
+.board-palette { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 0; justify-content: center; }
+.pal-swatch {
+    width: 26px; height: 26px; border: 1px solid #1f6f1f; cursor: pointer; padding: 0;
+    box-shadow: 0 0 0 1px #050a05 inset;
+}
+.pal-swatch.active { outline: 2px solid #4cd44c; outline-offset: 1px; box-shadow: 0 0 8px rgba(76,212,76,0.7); }
+.board-help { font-size: 10px; color: #6fa86f; text-align: center; padding-bottom: 8px; }
+
+@media (max-width: 720px) {
+    .cabal-standalone-hero { grid-template-columns: 64px 1fr; }
+    .cabal-standalone-logo { width: 64px; height: 64px; }
+    .cabal-standalone-h1 { font-size: 28px; }
+}

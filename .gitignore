@@ -1,0 +1,8 @@
+backend/pkg/
+backend/bundle.zip
+backend/hmac.env
+.DS_Store
+node_modules/
+*.log
+.env
+.env.*

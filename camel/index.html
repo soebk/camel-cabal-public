@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CamelCabal Terminal | DN404 Scarcity Tracker</title>
+    <meta name="description" content="Real-time DN404 mint tracker and scarcity dashboard for CamelCabal. Monitor supply absorption, floor comparisons, and live blockchain events.">
+    
+    <!-- Open Graph / Facebook / Discord -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="ebk.tech">
+    <meta property="og:url" content="https://<your-domain>/camel/">
+    <meta property="og:title" content="Camel Cabal Terminal · $CAMEL DN404 tracker">
+    <meta property="og:description" content="Live mint tracker, market stats, Defined.fi chart, and the Cabal gated chat — for $CAMEL holders. Powered by ebk.tech.">
+    <meta property="og:image" content="https://<your-domain>/camel/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="theme-color" content="#007a33">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://<your-domain>/camel/">
+    <meta name="twitter:title" content="Camel Cabal Terminal · $CAMEL DN404 tracker">
+    <meta name="twitter:description" content="Live mint tracker, market stats, Defined.fi chart, and the Cabal gated chat — for $CAMEL holders.">
+    <meta name="twitter:image" content="https://<your-domain>/camel/og.png">
+    <link rel="icon" href="/camel/silk-road.svg" type="image/svg+xml">
+
+    <!-- Ethers.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <!-- Chart.js and DataLabels Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    
+    <!-- Google Fonts: JetBrains Mono for a clean Terminal Style -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="crt-overlay"></div>
+    <div class="top-nav">
+        <div class="nav-links">
+            <a href="https://camelcabal.fun/" target="_blank" rel="noopener">camelcabal.fun</a> |
+            <a href="https://camelcabal.fun/#agents" target="_blank" rel="noopener">agents</a> |
+            <a href="https://x.com/camel_cabal" target="_blank" rel="noopener">x</a> |
+            <a href="https://etherscan.io/address/0x000Caba1002917B27300d7b67Be2d1C51B93bF00" target="_blank" rel="noopener">contract</a>
+            <a href="/cabal/" class="cabal-cta" id="nav-cabal-cta">▸ ENTER THE CABAL ◂</a>
+        </div>
+        <div class="status-box">
+            Status: <span id="connection-status" class="status-dot connecting"></span>
+            <span id="status-text">Connecting...</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <header class="sr-header">
+            <div class="logo-box">
+                <img src="silk-road.svg" class="camel-logo silk-logo" alt="Silk Road">
+                <h1>CAMEL CABAL TERMINAL</h1>
+            </div>
+            <div class="header-info">
+                <strong>anonymous market</strong><br>
+                Contract: <a href="https://etherscan.io/address/0x000Caba1002917B27300d7b67Be2d1C51B93bF00" target="_blank" class="contract-link">0x000C...3bF00</a>
+            </div>
+        </header>
+
+        <a href="/cabal/" class="cabal-banner">
+            <div class="cabal-banner-glyph">▣</div>
+            <div class="cabal-banner-body">
+                <div class="cabal-banner-title"><b>/cabal/</b> — camels only</div>
+                <div class="cabal-banner-sub">a private space for $CAMEL holders. hold ≥ 1 CAMEL NFT, sign once, post freely.</div>
+            </div>
+            <span class="cabal-banner-cta">enter →</span>
+        </a>
+
+        <div class="market-ticker">
+            <div class="ticker-item">Token Price: <span id="token-price" class="ticker-value">Loading...</span></div>
+            <div class="ticker-item">Implied NFT Value: <span id="implied-nft-price" class="ticker-value">Loading...</span></div>
+            <div class="ticker-item">Market Cap: <span id="market-cap" class="ticker-value">Loading...</span></div>
+            <div class="ticker-item">24h Vol: <span id="vol-24h" class="ticker-value">Loading...</span></div>
+        </div>
+
+        <div class="layout">
+            <aside class="sidebar">
+                <div class="side-box">
+                    <h3>Navigation</h3>
+                    <ul class="category-list tab-menu">
+                        <li><a href="#/tracker" id="tab-mints" class="active-tab">Live Tracker</a></li>
+                        <li><a href="#/chart" id="tab-chart">Chart</a></li>
+                        <li><a href="#/stats" id="tab-stats">Market Stats</a></li>
+                        <li><a href="#/donate" id="tab-donate">Donate / Contribute</a></li>
+                        <li><a href="/cabal/" id="tab-cabal">The Cabal</a></li>
+                        <li><a href="#/links" id="tab-links">Links</a></li>
+                    </ul>
+                </div>
+            </aside>
+
+            <main class="content">
+                <!-- VIEW 1: MINTS TABLE -->
+                <div id="view-mints" class="content-box">
+                    <div class="box-header">Live Mints Tracker</div>
+                    
+                    <div id="empty-state" class="empty-state">
+                        <p>Waiting for new mint transactions...</p>
+                    </div>
+                    
+                    <div class="mints-table-container">
+                        <table class="mints-table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Item ID</th>
+                                    <th>Wallet</th>
+                                    <th>Transaction</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mints-body">
+                                <!-- Mint rows will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- VIEW 2: MARKET STATS (GRAPH) -->
+                <div id="view-stats" class="content-box" style="display: none;">
+                    <div class="box-header">Market Statistics & Supply Overview</div>
+                    
+                    <!-- Scarcity Score Card -->
+                    <div class="scarcity-score-card">
+                        <div class="score-header">
+                            <span class="score-title">Global Scarcity Score</span>
+                            <span id="score-status" class="score-tag">INITIALIZING</span>
+                        </div>
+                        <div class="score-body">
+                            <div class="score-number">
+                                <span id="scarcity-score-val">--</span><small>%</small>
+                            </div>
+                            <div class="score-progress-container">
+                                <div id="score-fill" class="score-progress-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="score-footer">
+                            Based on Mint Absorption and NFT Price Premium
+                        </div>
+                    </div>
+
+                    <div class="stats-overview">
+                        <div class="stat-number">
+                            <span class="stat-label">Latest Block</span>
+                            <span class="stat-val" id="latest-block">---</span>
+                        </div>
+                        <div class="stat-number">
+                            <span class="stat-label">Mints Tracked</span>
+                            <span class="stat-val" id="total-mints">0</span>
+                        </div>
+                        <div class="stat-number">
+                            <span class="stat-label">Burns Tracked</span>
+                            <span class="stat-val" id="total-burns">0</span>
+                        </div>
+                        <div class="stat-number">
+                            <span class="stat-label">Current Supply</span>
+                            <span class="stat-val" id="current-supply">---</span>
+                        </div>
+                        <div class="stat-number scarcity-item">
+                            <span class="stat-label">Unmintable</span>
+                            <span class="stat-val" id="unmintable-nfts">---</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Floor Comparison Card -->
+                    <div class="floor-compare-box">
+                        <div class="floor-item">
+                            <span class="floor-label">OpenSea Floor</span>
+                            <span class="floor-val" id="os-floor-eth">Loading...</span>
+                            <span class="floor-sub" id="os-floor-usd">---</span>
+                        </div>
+                        <div class="floor-arrow" id="floor-arrow">&#8644;</div>
+                        <div class="floor-item">
+                            <span class="floor-label">Implied Token Floor</span>
+                            <span class="floor-val" id="implied-floor-eth">Loading...</span>
+                            <span class="floor-sub" id="implied-floor-usd">---</span>
+                        </div>
+                        <div class="floor-item">
+                            <span class="floor-label">Signal</span>
+                            <span class="floor-val" id="floor-signal-val">---</span>
+                            <span class="floor-sub" id="floor-signal-desc">---</span>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="scarcityChart"></canvas>
+                    </div>
+
+                    <div class="box-header" style="margin-top: 20px;">Daily Mint &amp; Burn Activity</div>
+                    <div class="chart-container" style="max-width: 100%; padding: 20px;">
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- VIEW: DEFINED.FI CHART -->
+                <div id="view-chart" class="content-box" style="display: none;">
+                    <div class="box-header">$CAMEL Chart · live via defined.fi</div>
+                    <div class="defined-embed-wrap">
+                        <iframe id="defined-embed" title="Defined Embed" src="https://www.defined.fi/eth/0x1b337491fb312c3500e1feef56d50bcacee6c7e3/embed?quoteToken=token0&amp;hideTxTable=0&amp;hideSidebar=0&amp;hideChart=0&amp;hideChartEmptyBars=1&amp;chartSmoothing=0&amp;embedColorMode=DEFAULT" frameborder="0" allow="clipboard-write"></iframe>
+                    </div>
+                </div>
+
+                <!-- VIEW: DONATE / CONTRIBUTE -->
+                <div id="view-donate" class="content-box" style="display: none;">
+                    <div class="box-header">Donate / Contribute</div>
+                    <div class="swap-box">
+                        <p class="swap-lore">
+                            // tip the dev. attach a public note — feature requests, complaints, encouragement, ascii.<br>
+                            // every donation appears on the public wall below. recipient: <code>0xf622…ce8a2</code>
+                        </p>
+                        <div class="swap-row">
+                            <label>ETH amount</label>
+                            <input id="donate-amount" type="number" min="0" step="0.001" placeholder="0.0" value="0.005">
+                        </div>
+                        <div class="swap-row">
+                            <label>Public note (optional, max 500 chars)</label>
+                            <textarea id="donate-note" rows="3" maxlength="500" placeholder="add a feature request, leave a message, or sign your name…"></textarea>
+                        </div>
+                        <div class="swap-actions">
+                            <button id="donate-connect" class="swap-btn">Connect Wallet</button>
+                            <button id="donate-send" class="swap-btn primary" disabled>Send donation</button>
+                            <button id="donate-uniswap" class="swap-btn">Trade $CAMEL on Uniswap →</button>
+                        </div>
+                        <div id="donate-status" class="swap-status">Connect a wallet to donate. Notes are public on-chain via this site's wall.</div>
+                        <div class="swap-disclaimer">
+                            Donations go directly to the developer wallet. Notes are stored off-chain and shown publicly on the wall below — don't include anything you don't want public. No refunds, no promises. Keep building.
+                        </div>
+                    </div>
+
+                    <div class="box-header" style="margin-top:24px;">Public donor wall</div>
+                    <div id="donate-wall" class="cabal-list" style="max-height:none; padding:8px 12px;"></div>
+                </div>
+
+                <!-- VIEW 5: THE CABAL (gated social) -->
+                <div id="view-cabal" class="content-box" style="display: none;">
+                    <div class="box-header">The Cabal — for camels only</div>
+                    <div id="cabal-gate" class="cabal-gate">
+                        <div class="lore">
+                            <p>// route established. silk road relay node 0x000Caba</p>
+                            <p>// hold ≥ 1,000,000 $CAMEL. sign once. enter the tent.</p>
+                            <p>// no DMs from outsiders. no algorithm. no ads. just camels.</p>
+                        </div>
+                        <button id="cabal-connect" class="swap-btn primary">Connect Wallet</button>
+                        <div id="cabal-gate-status" class="swap-status">Awaiting connection.</div>
+                    </div>
+
+                    <div id="cabal-app" class="cabal-app" style="display:none;">
+                        <div class="cabal-header">
+                            <div class="cabal-me">
+                                <span class="cabal-id" id="cabal-me-id">—</span>
+                                <span class="cabal-me-addr" id="cabal-me-addr"></span>
+                                <input id="cabal-handle" placeholder="set a handle…" maxlength="24">
+                                <button id="cabal-handle-save" class="cabal-mini-btn">save</button>
+                                <button id="pfp-change" class="cabal-mini-btn">change pfp</button>
+                                <button id="connect-x" class="cabal-mini-btn">connect X</button>
+                                <span id="cabal-x-badge" class="cabal-x-mini" style="display:none;"></span>
+                                <span id="cabal-handle-flash" class="cabal-flash"></span>
+                            </div>
+                            <div class="cabal-sub-tabs">
+                                <a href="#feed"   data-sub="feed"   class="cabal-sub active">feed</a>
+                                <a href="#group"  data-sub="group"  class="cabal-sub">group chat</a>
+                                <a href="#board"  data-sub="board"  class="cabal-sub">drawing board</a>
+                                <a href="#arcade" data-sub="arcade" class="cabal-sub">arcade</a>
+                                <a href="#camels" data-sub="camels" class="cabal-sub">camels</a>
+                                <a href="javascript:void(0)" id="cabal-logout" class="cabal-sub cabal-logout-link">log out</a>
+                            </div>
+                        </div>
+
+                        <div id="cabal-sub-feed" class="cabal-pane">
+                            <div class="cabal-composer">
+                                <textarea id="feed-text" rows="2" maxlength="2000" placeholder="post to the cabal feed… paste links, drop images, embed yt"></textarea>
+                                <div class="cabal-composer-actions">
+                                    <label class="cabal-mini-btn upload-btn" for="feed-image">[ attach file ]</label>
+                                    <input id="feed-image" type="file" accept="image/*,video/*,audio/*" hidden>
+                                    <button id="feed-post" class="cabal-mini-btn primary">post</button>
+                                </div>
+                            </div>
+                            <span id="feed-flash" class="cabal-flash"></span>
+                            <div id="feed-list" class="cabal-list"></div>
+                        </div>
+
+                        <div id="cabal-sub-group" class="cabal-pane" style="display:none;">
+                            <div id="group-list" class="cabal-list cabal-chat"></div>
+                            <div class="cabal-composer">
+                                <input id="group-text" maxlength="2000" placeholder="say something… paste links, embed yt">
+                                <label class="cabal-mini-btn upload-btn" for="group-image">[+]</label>
+                                <input id="group-image" type="file" accept="image/*,video/*,audio/*" hidden>
+                                <button id="group-send" class="cabal-mini-btn primary">send</button>
+                            </div>
+                            <span id="group-flash" class="cabal-flash"></span>
+                        </div>
+
+                        <div id="cabal-sub-board" class="cabal-pane" style="display:none;">
+                            <div class="board-header">
+                                <span class="board-title">// the bathroom stall · 100×100 · 1 pixel / 3s · permanent</span>
+                                <span id="board-cooldown" class="cabal-flash">ready · place a pixel</span>
+                            </div>
+                            <div class="board-stage">
+                                <canvas id="camel-canvas" width="100" height="100"></canvas>
+                            </div>
+                            <div id="canvas-palette" class="board-palette"></div>
+                            <div class="board-help">click a swatch to pick a color · click the canvas to place. no undo. the desert remembers.</div>
+                            <span id="board-flash" class="cabal-flash"></span>
+                        </div>
+
+                        <div id="cabal-sub-arcade" class="cabal-pane" style="display:none;">
+                            <div class="arcade-header">// the arcade · all scores public</div>
+                            <div id="arcade-global-lb" class="arcade-lb arcade-lb-global"></div>
+                            <div id="arcade-tiles" class="arcade-tiles"></div>
+                            <div id="arcade-canvas-wrap" class="arcade-stage" style="display:none;">
+                                <div class="arcade-stage-header">
+                                    <span><span id="arcade-name">—</span></span>
+                                    <span class="arcade-stage-actions">
+                                        <button id="arcade-restart" class="cabal-mini-btn">restart</button>
+                                        <button id="arcade-quit" class="cabal-mini-btn">quit</button>
+                                    </span>
+                                </div>
+                                <canvas id="arcade-canvas" width="320" height="320"></canvas>
+                                <div id="arcade-pad" class="arcade-pad">
+                                    <div class="arcade-pad-row"><button data-pad="up">▲</button></div>
+                                    <div class="arcade-pad-row">
+                                        <button data-pad="left">◀</button>
+                                        <button data-pad="fire">●</button>
+                                        <button data-pad="right">▶</button>
+                                    </div>
+                                    <div class="arcade-pad-row"><button data-pad="down">▼</button></div>
+                                </div>
+                            </div>
+                            <div id="arcade-board" class="arcade-board" style="display:none;">
+                                <div id="arcade-leaderboard" class="arcade-lb"></div>
+                            </div>
+                        </div>
+
+                        <div id="cabal-sub-camels" class="cabal-pane" style="display:none;">
+                            <div id="camels-list" class="cabal-list"></div>
+                        </div>
+
+                        <div id="cabal-sub-profile" class="cabal-pane" style="display:none;"></div>
+                    </div>
+                    <div class="lore-footer">// powered by ebk.tech · cabal node v0.1 · the desert remembers</div>
+                </div>
+
+                <!-- VIEW 4: LINKS -->
+                <div id="view-links" class="content-box" style="display: none;">
+                    <div class="box-header">Cabal Links</div>
+                    <ul class="links-list">
+                        <li><a href="https://camelcabal.fun/" target="_blank" rel="noopener">camelcabal.fun — main site</a></li>
+                        <li><a href="https://camelcabal.fun/#agents" target="_blank" rel="noopener">camelcabal.fun/#agents — agent registry</a></li>
+                        <li><a href="https://x.com/camel_cabal" target="_blank" rel="noopener">@camel_cabal on X</a></li>
+                        <li><a href="https://etherscan.io/address/0x000Caba1002917B27300d7b67Be2d1C51B93bF00" target="_blank" rel="noopener">$CAMEL contract — Etherscan</a></li>
+                        <li><a href="https://app.uniswap.org/#/swap?outputCurrency=0x000Caba1002917B27300d7b67Be2d1C51B93bF00" target="_blank" rel="noopener">Uniswap — direct trade</a></li>
+                        <li><a href="https://dexscreener.com/ethereum/0x000Caba1002917B27300d7b67Be2d1C51B93bF00" target="_blank" rel="noopener">DexScreener chart</a></li>
+                    </ul>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>CamelCabal Terminal &copy; 2026 | Powered by ethers.js</p>
+    </div>
+
+    <div id="notification-container"></div>
+    <script src="app.js"></script>
+    <script src="cabal.js?v=27"></script>
+    <script src="arcade.js?v=7"></script>
+</body>
+</html>
