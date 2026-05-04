@@ -42,6 +42,7 @@ const ROUTES = {
     '#/tracker': { tab: 'tab-mints',  view: 'view-mints'  },
     '#/chart':   { tab: 'tab-chart',  view: 'view-chart'  },
     '#/stats':   { tab: 'tab-stats',  view: 'view-stats'  },
+    '#/swap':    { tab: 'tab-swap',   view: 'view-swap'   },
     '#/donate':  { tab: 'tab-donate', view: 'view-donate' },
     '#/cabal':   { tab: 'tab-cabal',  view: 'view-cabal'  },
     '#/links':   { tab: 'tab-links',  view: 'view-links'  },
@@ -70,9 +71,27 @@ function setupTabs() {
 const DEV_WALLET   = '0xf62290b1e405f03628a4b6ba025ad5b655cce8a2';
 const CAMEL_TOKEN  = '0x000Caba1002917B27300d7b67Be2d1C51B93bF00';
 const CABAL_API    = 'https://<your-api-domain>/cabal';
+
+// ── CYPHER AMM V4 (Algebra Integral v1.2) — canon CAMEL/WETH pool ─
+const WETH         = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
+const CYPHER_QUOTER = '0x02f22D58d161d1C291ABfe88764d84120f20F723';
+const CYPHER_ROUTER = '0x20C5893f69F635f55b0367C519F3f95e59c0b0Ab';
+// Deployer for the canon CAMEL/WETH pool — derived from on-chain swap calldata.
+const CYPHER_POOL_DEPLOYER = '0xb9783d9bd7022b1fca458518dc0e10646720acf0';
+const CYPHER_SLIPPAGE_BPS = 300; // 3%
+const CYPHER_QUOTER_ABI = [
+    'function quoteExactInputSingle(address tokenIn, address tokenOut, address deployer, uint256 amountIn, uint160 limitSqrtPrice) returns (uint256 amountOut, uint16 fee)',
+];
+const CYPHER_ROUTER_ABI = [
+    'function exactInputSingle(tuple(address tokenIn,address tokenOut,address deployer,address recipient,uint256 deadline,uint256 amountIn,uint256 amountOutMinimum,uint160 limitSqrtPrice)) external payable returns (uint256)',
+    'function refundNativeToken() external payable',
+    'function multicall(bytes[] data) external payable returns (bytes[] memory)',
+];
+
 let swapProvider = null;
 let swapSigner = null;
 let swapAccount = null;
+let lastCypherQuote = null;
 
 function setSwapStatus(msg, kind) {
     const el = document.getElementById('donate-status');
@@ -159,10 +178,79 @@ async function sendDonation() {
 }
 
 function openCypher() {
-    const ethAmt = parseFloat(document.getElementById('donate-amount').value || '0');
+    const ethAmt = parseFloat(document.getElementById('swap-eth-amount').value || '0');
     let url = `https://app.cyphereth.com/swap?inputCurrency=ETH&outputCurrency=${CAMEL_TOKEN}`;
     if (ethAmt > 0) url += `&exactAmount=${ethAmt}&exactField=input`;
     window.open(url, '_blank', 'noopener');
+}
+
+function setSwapPanel(msg, kind) {
+    const el = document.getElementById('swap-status');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'swap-status' + (kind ? ' ' + kind : '');
+}
+
+async function getCypherQuote() {
+    const ethStr = document.getElementById('swap-eth-amount').value;
+    const ethAmt = parseFloat(ethStr);
+    if (!(ethAmt > 0)) { setSwapPanel('Enter an ETH amount.', 'err'); return null; }
+    const reader = swapProvider || new ethers.providers.JsonRpcProvider(RPC_HTTP);
+    const quoter = new ethers.Contract(CYPHER_QUOTER, CYPHER_QUOTER_ABI, reader);
+    const amountIn = ethers.utils.parseEther(ethStr);
+    try {
+        const out = await quoter.callStatic.quoteExactInputSingle(WETH, CAMEL_TOKEN, CYPHER_POOL_DEPLOYER, amountIn, 0);
+        const amountOut = out.amountOut || out[0];
+        const fee = (out.fee || out[1]).toString();
+        const camel = +ethers.utils.formatUnits(amountOut, 18);
+        document.getElementById('swap-out').value = camel.toLocaleString(undefined, { maximumFractionDigits: 4 });
+        const nfts = camel / 1_000_000;
+        setSwapPanel(`Quote: ${camel.toLocaleString(undefined,{maximumFractionDigits:2})} CAMEL (~${nfts.toFixed(3)} NFTs) · pool fee ${(parseInt(fee,10)/10000).toFixed(2)}% · slippage ${CYPHER_SLIPPAGE_BPS/100}%`, 'ok');
+        lastCypherQuote = { amountIn, amountOut, fee };
+        return lastCypherQuote;
+    } catch (e) {
+        setSwapPanel('Quote failed: ' + (e.reason || e.message || e), 'err');
+        return null;
+    }
+}
+
+async function executeCypherSwap() {
+    if (!swapSigner) { setSwapPanel('Connect wallet first.', 'err'); return; }
+    let q = lastCypherQuote;
+    const ethStr = document.getElementById('swap-eth-amount').value;
+    const ethAmt = parseFloat(ethStr);
+    if (!(ethAmt > 0)) { setSwapPanel('Enter an ETH amount.', 'err'); return; }
+    if (!q || !q.amountIn.eq(ethers.utils.parseEther(ethStr))) {
+        q = await getCypherQuote();
+        if (!q) return;
+    }
+    const btn = document.getElementById('swap-execute');
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = 'swapping…';
+    try {
+        const router = new ethers.Contract(CYPHER_ROUTER, CYPHER_ROUTER_ABI, swapSigner);
+        const minOut = q.amountOut.mul(10000 - CYPHER_SLIPPAGE_BPS).div(10000);
+        const params = {
+            tokenIn: WETH,
+            tokenOut: CAMEL_TOKEN,
+            deployer: CYPHER_POOL_DEPLOYER,
+            recipient: swapAccount,
+            deadline: Math.floor(Date.now()/1000) + 600,
+            amountIn: q.amountIn,
+            amountOutMinimum: minOut,
+            limitSqrtPrice: 0,
+        };
+        const swapData   = router.interface.encodeFunctionData('exactInputSingle', [params]);
+        const refundData = router.interface.encodeFunctionData('refundNativeToken');
+        setSwapPanel('Confirm in your wallet…');
+        const tx = await router.multicall([swapData, refundData], { value: q.amountIn });
+        setSwapPanel('Swap tx ' + tx.hash.slice(0,10) + '… mining (1 confirmation).');
+        await tx.wait(1);
+        setSwapPanel('✓ Swap complete. Welcome to the cabal.', 'ok');
+        document.getElementById('swap-out').value = '';
+        lastCypherQuote = null;
+    } catch (e) {
+        setSwapPanel('Swap failed: ' + (e.reason || e.message || e), 'err');
+    } finally { btn.disabled = false; btn.textContent = orig; }
 }
 
 function escDonateHtml(s) { return (s||'').replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
@@ -202,7 +290,9 @@ async function loadDonorWall() {
 function initSwap() {
     document.getElementById('donate-connect').addEventListener('click', connectWallet);
     document.getElementById('donate-send').addEventListener('click', sendDonation);
-    document.getElementById('donate-cypher').addEventListener('click', openCypher);
+    if (document.getElementById('swap-quote'))   document.getElementById('swap-quote').addEventListener('click', getCypherQuote);
+    if (document.getElementById('swap-execute')) document.getElementById('swap-execute').addEventListener('click', executeCypherSwap);
+    if (document.getElementById('swap-cypher-link')) document.getElementById('swap-cypher-link').addEventListener('click', openCypher);
     loadDonorWall();
     setInterval(loadDonorWall, 60000);
     if (window.ethereum && window.ethereum.selectedAddress) connectWallet();

@@ -92,6 +92,7 @@
                         <li><a href="#/tracker" id="tab-mints" class="active-tab">Live Tracker</a></li>
                         <li><a href="#/chart" id="tab-chart">Chart</a></li>
                         <li><a href="#/stats" id="tab-stats">Market Stats</a></li>
+                        <li><a href="#/swap" id="tab-swap">Swap $CAMEL</a></li>
                         <li><a href="#/donate" id="tab-donate">Donate / Contribute</a></li>
                         <li><a href="/cabal/" id="tab-cabal">The Cabal</a></li>
                         <li><a href="#/links" id="tab-links">Links</a></li>
@@ -210,6 +211,35 @@
                     </div>
                 </div>
 
+                <!-- VIEW: SWAP (Cypher AMM V4) -->
+                <div id="view-swap" class="content-box" style="display: none;">
+                    <div class="box-header">Swap ETH → $CAMEL · Cypher AMM V4</div>
+                    <div class="swap-box">
+                        <p class="swap-lore">
+                            // routed through the canon CAMEL/WETH pool on Cypher (Algebra Integral v1.2)<br>
+                            // pool <code>0x1b3374…6c7e3</code> · 1.5% fee tier · slippage 3%
+                        </p>
+                        <div class="swap-row">
+                            <label>You pay (ETH)</label>
+                            <input id="swap-eth-amount" type="number" min="0" step="0.001" placeholder="0.0" value="0.01">
+                        </div>
+                        <div class="swap-row">
+                            <label>You receive (~$CAMEL)</label>
+                            <input id="swap-out" type="text" readonly placeholder="—">
+                        </div>
+                        <div class="swap-actions">
+                            <button id="donate-connect" class="swap-btn">Connect Wallet</button>
+                            <button id="swap-quote" class="swap-btn">Get Quote</button>
+                            <button id="swap-execute" class="swap-btn primary">Swap</button>
+                            <button id="swap-cypher-link" class="swap-btn">Open in Cypher →</button>
+                        </div>
+                        <div id="swap-status" class="swap-status">Connect a wallet on Ethereum mainnet, set an ETH amount, get a quote, then swap.</div>
+                        <div class="swap-disclaimer">
+                            Direct on-chain swap via Cypher's Router V4. We do not take a fee — slippage and the pool's adaptive fee are the only costs. Not financial advice.
+                        </div>
+                    </div>
+                </div>
+
                 <!-- VIEW: DONATE / CONTRIBUTE -->
                 <div id="view-donate" class="content-box" style="display: none;">
                     <div class="box-header">Donate / Contribute</div>
@@ -229,7 +259,7 @@
                         <div class="swap-actions">
                             <button id="donate-connect" class="swap-btn">Connect Wallet</button>
                             <button id="donate-send" class="swap-btn primary" disabled>Send donation</button>
-                            <button id="donate-cypher" class="swap-btn">Trade $CAMEL on Cypher →</button>
+                            <a href="#/swap" class="swap-btn" style="text-decoration:none;text-align:center;">Swap $CAMEL on-site →</a>
                         </div>
                         <div id="donate-status" class="swap-status">Connect a wallet to donate. Notes are public on-chain via this site's wall.</div>
                         <div class="swap-disclaimer">
