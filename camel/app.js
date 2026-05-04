@@ -81,19 +81,46 @@ function setSwapStatus(msg, kind) {
     el.className = 'swap-status' + (kind ? ' ' + kind : '');
 }
 
-async function connectWallet() {
-    if (!window.ethereum) { setSwapStatus('No wallet detected. Install MetaMask.', 'err'); return; }
+let _donateWalletSvc = null;
+async function _donateMicroWeb3() {
+    if (!window.microWeb3 || !window.microact) return null;
     try {
-        swapProvider = new ethers.providers.Web3Provider(window.ethereum, 'any');
-        await swapProvider.send('eth_requestAccounts', []);
+        if (!_donateWalletSvc) {
+            const eb = new microact.EventBus();
+            _donateWalletSvc = new microWeb3.WalletService(eb);
+            await _donateWalletSvc.initialize();
+        }
+        const available = _donateWalletSvc.getAvailableWallets() || [];
+        if (!available.length) return null;
+        const mm = available.find(w => (w.type || w.legacyType || '').toLowerCase() === 'metamask');
+        const pick = mm || available[0];
+        const type = pick.type || pick.legacyType;
+        await _donateWalletSvc.connect(type);
+        const ps = _donateWalletSvc.getProviderAndSigner();
+        return { provider: ps.provider, signer: ps.signer, address: _donateWalletSvc.getAddress() };
+    } catch (e) { console.warn('[donate] microWeb3 fallback:', e); return null; }
+}
+
+async function connectWallet() {
+    if (!window.ethereum && !window.microWeb3) { setSwapStatus('No wallet detected. Install MetaMask.', 'err'); return; }
+    try {
+        const mw = await _donateMicroWeb3();
+        if (mw) {
+            swapProvider = mw.provider; swapSigner = mw.signer; swapAccount = mw.address;
+        } else {
+            swapProvider = new ethers.providers.Web3Provider(window.ethereum, 'any');
+            await swapProvider.send('eth_requestAccounts', []);
+            swapSigner = swapProvider.getSigner();
+            swapAccount = await swapSigner.getAddress();
+        }
         const network = await swapProvider.getNetwork();
         if (network.chainId !== 1) {
             try { await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x1' }] }); }
             catch { setSwapStatus('Switch to Ethereum mainnet to swap.', 'err'); return; }
             swapProvider = new ethers.providers.Web3Provider(window.ethereum, 'any');
+            swapSigner = swapProvider.getSigner();
+            swapAccount = await swapSigner.getAddress();
         }
-        swapSigner = swapProvider.getSigner();
-        swapAccount = await swapSigner.getAddress();
         document.getElementById('donate-connect').textContent = swapAccount.slice(0,6) + '…' + swapAccount.slice(-4);
         document.getElementById('donate-send').disabled = false;
         setSwapStatus('Connected. Set an amount + note, then send.', 'ok');

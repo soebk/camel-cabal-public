@@ -24,7 +24,7 @@ const URL_RE = /\bhttps?:\/\/[^\s<>"']+/gi;
 const IMG_EXT_RE = /\.(png|jpe?g|gif|webp|avif|svg|bmp|heic|heif)(\?|#|$)/i;
 const VIDEO_EXT_RE = /\.(mp4|webm|mov|m4v|ogv)(\?|#|$)/i;
 const AUDIO_EXT_RE = /\.(mp3|ogg|wav|m4a)(\?|#|$)/i;
-const CABAL_UPLOAD_PREFIX = "https://<your-domain>/cabal-uploads/";
+const CABAL_UPLOAD_PREFIX = "https://ebk.tech/cabal-uploads/";
 function ytId(u) {
     try {
         const url = new URL(u);
@@ -190,19 +190,54 @@ function flash(target, msg, kind) {
     setTimeout(() => { if (el.textContent === msg) { el.textContent = ""; el.className = "cabal-flash"; } }, 4000);
 }
 
+// micro-web3 wallet bridge — EIP-6963 multi-wallet detection, falls back to direct ethereum.
+let _walletSvc = null;
+async function microWeb3Connect() {
+    if (!window.microWeb3 || !window.microact) return null;
+    try {
+        if (!_walletSvc) {
+            const eb = new microact.EventBus();
+            _walletSvc = new microWeb3.WalletService(eb);
+            await _walletSvc.initialize();
+        }
+        const available = _walletSvc.getAvailableWallets() || [];
+        if (!available.length) return null;
+        // Prefer metamask if multiple wallets are detected; else first.
+        const mm = available.find(w => (w.type || w.legacyType || "").toLowerCase() === "metamask");
+        const pick = mm || available[0];
+        const type = pick.type || pick.legacyType;
+        if (!type) return null;
+        await _walletSvc.connect(type);
+        const { provider: ethersProvider, signer } = _walletSvc.getProviderAndSigner();
+        if (!ethersProvider || !signer) return null;
+        const address = (_walletSvc.getAddress() || await signer.getAddress()).toLowerCase();
+        return { provider: ethersProvider, signer, address, walletType: type };
+    } catch (e) {
+        console.warn("[cabal] microWeb3 connect failed, falling back:", e);
+        return null;
+    }
+}
+
 async function cabalLogin() {
-    if (!window.ethereum) { setGateStatus("No wallet detected. Install MetaMask.", "err"); return; }
+    if (!window.ethereum && !window.microWeb3) { setGateStatus("No wallet detected. Install MetaMask.", "err"); return; }
     try {
         setGateStatus("Connecting…");
-        const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-        await provider.send("eth_requestAccounts", []);
+        let provider, signer, wallet;
+        const mw = await microWeb3Connect();
+        if (mw) {
+            provider = mw.provider; signer = mw.signer; wallet = mw.address;
+            console.log("[cabal] connected via microWeb3:", mw.walletType);
+        } else {
+            provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+            await provider.send("eth_requestAccounts", []);
+            signer = provider.getSigner();
+            wallet = (await signer.getAddress()).toLowerCase();
+        }
         const net = await provider.getNetwork();
         if (net.chainId !== 1) {
             try { await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x1" }] }); }
             catch { setGateStatus("Switch to Ethereum mainnet.", "err"); return; }
         }
-        const signer = provider.getSigner();
-        const wallet = (await signer.getAddress()).toLowerCase();
 
         setGateStatus("Fetching nonce…");
         const nonce = await api(`/nonce?wallet=${wallet}`);
